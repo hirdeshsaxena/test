@@ -1,0 +1,20 @@
+[GLOBAL]
+user=supla
+group=supla
+
+[NET]
+tcp_port=2015
+tcp_enabled=Y
+
+ssl_port=2016
+ssl_enabled={% if supla_ssl_enabled %}Y{% else %}N{% endif %}
+
+cert=/etc/supla-server/cert.crt
+private_key=/etc/supla-server/private.key
+
+[MySQL]
+host=127.0.0.1
+port=3306
+database=supla
+user=supla
+password={{ supla_database_password }}

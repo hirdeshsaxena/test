@@ -1,0 +1,28 @@
+#{{ ansible_managed }}
+<VirtualHost *:80>
+	ServerAdmin webmaster@localhost
+        {% if supla_server is defined %}ServerName {{ supla_server }}{% endif %} 
+	<IfModule mod_rewrite.c>
+		RewriteEngine on
+		RewriteRule ^/(.*) https://%{HTTP_HOST}/$1 [NC,R=301,L]
+        </IfModule>
+</VirtualHost>
+
+<VirtualHost *:443>
+        ServerAdmin webmaster@localhost
+	{% if supla_server is defined %}ServerName {{ supla_server }}{% endif %} 
+        DocumentRoot {{ supla_path }}/www/web
+	SSLEngine on
+        SSLCertificateFile /etc/supla-server/cert.crt
+        SSLCertificateKeyFile /etc/supla-server/private.key
+	<Directory {{ supla_path }}/www/web>
+        	AllowOverride All
+        	Require all granted
+		<IfModule mod_rewrite.c>
+            		Options -MultiViews
+            		RewriteEngine On
+            		RewriteCond %{REQUEST_FILENAME} !-f
+            		RewriteRule ^(.*)$ app.php [QSA,L]
+        	</IfModule>
+ 	</Directory>
+</VirtualHost>

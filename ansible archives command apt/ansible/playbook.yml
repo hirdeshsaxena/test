@@ -1,0 +1,25 @@
+---
+- hosts: all
+  become: true
+  vars:
+    mysql_root_pass: secretpassword
+    supla_database_password: secretpassword
+    install_supla_server: True
+    install_supla_cloud: True
+    install_supla_dev: True
+    supla_generate_cert: True
+    supla_mailer_transport: null
+    supla_mailer_host: null
+    supla_mailer_user: null
+    supla_mailer_password: null
+    supla_mailer_port: null
+    supla_mailer_encryption: null
+    supla_mailer_from: null
+    supla_admin_email: null
+    supla_server: supla
+    supla_server_list: null
+    supla_locale: en
+    supla_ewz_recaptcha_public_key: null
+    supla_ewz_recaptcha_private_key: null
+  roles:
+    - role: supla

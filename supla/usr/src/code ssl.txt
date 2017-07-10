@@ -1,0 +1,11 @@
+cd /usr/src
+sudo mkdir openssl
+sudo wget https://www.openssl.org/source/openssl-1.0.1t.tar.gz
+sudo tar zxvf openssl-1.0.1t.tar.gz
+cd openssl-1.0.1t
+sudo ./config --prefix=/usr/src/openssl shared
+*edit Makefile and remove no-ssl2 flags
+sudo make depend
+sudo make install
+sudo cp /usr/src/openssl/lib/*.so /usr/lib/supla-server/
+sudo rm -rf cp /usr/src/openssl

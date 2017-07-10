@@ -1,0 +1,79 @@
+need to change host in supla-server cfg
+create database supla supla secretpassword
+
+
+wget https://getcomposer.org/composer.phar
+
+create group supla
+create user supla under group supla, sudo, www-data
+
+create directories for supla
+owner supla group supla 
+chmod 0755
+
+/etc/supla-server
+/etc/supla-dev
+
+
+install pacakages for ubuntu
+
+copy openssl_compile.sh
+run openssl_compile.sh
+copy supla-core 
+Make clean for supla-server (chdir={{ supla_path }}/src/supla-core/supla-server/Release)
+move supla-server to /usr/sbin/
+
+
+
+
+make clean for supla server
+make: chdir={{ supla_path }}/src/supla-core/supla-server/Release target=clean
+make: chdir={{ supla_path }}/src/supla-core/supla-server/Release
+move supla-server to usr/sbin
+
+
+
+
+create certificate:
+openssl req -new -nodes -x509 -subj "/C=IN/ST=Delhi/L=Warsaw/O=SUPLA/CN={{supla_server}}" -days 365 -keyout
+/etc/supla-server/private.key chmod 777 user root group root
+/etc/supla/supla-server/cert.crt user root group root
+
+
+
+mysql
+update myql root pass for all root accounts
+create supla database
+import supla database
+create supla user
+create database password
+
+
+
+copy supla-server configuration /etc/supla-server/supla.cfg owner supla group supla 0750
+copy supla-service script start supla server /etc/init.d/supla-server mode 755
+start daemon-reload
+start supla server start
+update-rc.d defaults
+update-rc.d enable
+
+apache modules enable
+copy apache vhost
+chmod 755
+remove default vhost
+enable apache vhost
+chown apache owner root group root
+
+install composer
+download supla-cloud
+make www directory readable
+install app by composer
+parameters.yml 
+change settings 755 owner supla group www-data
+enable or disable recaptcha
+
+supla-dev install
+
+
+
+

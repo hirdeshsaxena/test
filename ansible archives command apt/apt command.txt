@@ -1,0 +1,55 @@
+sudo apt-get install python-pip python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev apache2 mysql-server libapache2-mod-php7.0 php7.0-mysql php7.0-curl php7.0-json php7.0-intl php-pear php7.0-mbstring php7.0-zip php7.0-cgi php7.0-dev php7.0-gd php-imagick php7.0-imap php7.0-mcrypt php-memcache php7.0-pspell php7.0-recode php7.0-sqlite3 php7.0-tidy php7.0-xml php7.0-xdebug php7.0-xsl php-gettext php7.0-opcache php-apcu ntp python-software-properties libmysqlclient-dev libmysql++-dev build-essential python-mysqldb php-xml git curl php-mbstring php-gettext mysql-server net-tools nmap -y
+
+
+
+
+
+sudo apt-get install apache2 mysql-server libapache2-mod-php7.0 php7.0-curl php7.0-json php7.0-intl php-pear php7.0-mbstring php7.0-zip php7.0-cgi php7.0-dev php7.0-gd php-imagick php7.0-imap php7.0-mcrypt php-memcache php7.0-pspell php7.0-recode php7.0-sqlite3 php7.0-tidy php7.0-xml php7.0-xsl php-gettext php7.0-opcache php-apcu ntp python-software-properties libmysqlclient-dev libmysql++-dev build-essential python-mysqldb php-xml git curl phpmyadmin php-mbstring php-gettext net-tools nmap -y
+
+
+sudo apt-get install python-pip python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev
+
+
+sudo apt-get install bind9 dnsutils postfix dovecot-common dovecot-imapd dovecot-pop3d squirrelmail
+
+
+
+
+
+
+
+
+sudo apt-get update
+sudo apt-get install python-pip python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev -y
+sudo pip install --upgrade pip
+sudo pip install ansible
+mkdir -p ~/ansible/roles
+cd ~/ansible
+git clone https://github.com/alv91/ansible-role-supla roles/supla
+openssl req -new -newkey rsa:2048 -days 3650 -sha256 -nodes -x509 -keyout private.key -out cert.crt
+ansible-playbook -i "localhost," -c local playbook.yml -k -K -s -D
+
+
+mysql_user: login_user=root login_password={{ db_password }} name=root host={{ item }} password={{ mysql_root_pass }} state=present
+
+"{{ ansible_hostname }}"
+
+
+cd /usr/src
+sudo mkdir openssl
+sudo wget https://www.openssl.org/source/openssl-1.0.1t.tar.gz
+sudo tar zxvf openssl-1.0.1t.tar.gz
+cd openssl-1.0.1t
+sudo ./config --prefix=/usr/src/openssl shared
+*edit Makefile and remove no-ssl2 flags
+sudo make depend
+sudo make install
+sudo cp /usr/src/openssl/lib/*.so /usr/lib/supla-server/
+sudo rm -rf cp /usr/src/openssl
+
+
+Include /etc/phpmyadmin/apache.conf
+
+
+
+https://www.howtoforge.com/tutorial/install-apache-with-php-and-mysql-on-ubuntu-16-04-lamp/

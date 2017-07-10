@@ -1,0 +1,10 @@
+---
+- name: restart apache2
+  service: name=apache2 state=restarted enabled=yes 
+
+- name: restart supla-server
+  service: name=supla-server state=restarted enabled=yes
+
+- name: restart supla-dev
+  service: name=supla-dev state=restarted enabled=yes
+

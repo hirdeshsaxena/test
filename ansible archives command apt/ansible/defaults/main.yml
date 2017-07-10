@@ -1,0 +1,27 @@
+---
+mysql_root_pass: secretpassword
+
+supla_path: /home/supla
+supla_openssl_version: openssl-1.0.1t
+supla_database_password: secretpassword
+supla_ssl_enabled: True
+supla_composer_path: /usr/local/bin/composer
+install_supla_server: True
+install_supla_cloud: True
+install_supla_dev: True
+supla_generate_cert: True
+
+supla_mailer_transport: null
+supla_mailer_host: null
+supla_mailer_user: null
+supla_mailer_password: null
+supla_mailer_port: null
+supla_mailer_encryption: null
+supla_mailer_from: null
+supla_admin_email: null
+supla_server: supla
+supla_server_list: null 
+supla_locale: en
+supla_secret: secrethash
+supla_ewz_recaptcha_public_key: null 
+supla_ewz_recaptcha_private_key: null

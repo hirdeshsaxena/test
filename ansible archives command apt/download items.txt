@@ -1,0 +1,26 @@
+https://www.supla.org/download/SUPLA-IOT-SDK_x86.ova
+
+https://forum.supla.org/viewtopic.php?f=12&t=2011
+
+
+read topic for account activation
+
+https://forum.supla.org/viewtopic.php?f=8&t=67&start=60
+
+
+secret
+
+70be14e5553baaaaaa016babbe2bba65
+
+tutorial to deploy symfony
+
+https://www.digitalocean.com/community/tutorials/how-to-deploy-a-symfony-application-to-production-on-ubuntu-14-04
+
+
+TUTORIAL TO DEPLOY lamp on ubuntu
+
+https://www.howtoforge.com/tutorial/install-apache-with-php-and-mysql-on-ubuntu-16-04-lamp/
+
+6LeV_ycUAAAAAKGUpsH2XqchnbmRdDNqSzZ_sSWw
+
+6LeV_ycUAAAAAM36AkVBevr7gvqgtosiyx3qm2DT

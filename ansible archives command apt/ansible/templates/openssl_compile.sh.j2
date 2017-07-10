@@ -1,0 +1,17 @@
+#!/bin/bash
+
+
+cd /usr/src
+mkdir -p /usr/src/openssl
+rm -rf /usr/src/{{ supla_openssl_version }}
+rm -f /usr/src/{{ supla_openssl_version}}.tar.gz
+wget https://www.openssl.org/source/{{ supla_openssl_version  }}.tar.gz
+tar zxvf /usr/src/{{ supla_openssl_version  }}.tar.gz
+cd /usr/src/{{ supla_openssl_version  }} 
+make clean
+./config --prefix=/usr/src/openssl shared
+sed -e 's/no\-ssl2//g' /usr/src/{{ supla_openssl_version  }}/Makefile
+make depend -j 1 
+make install -j 1
+cp /usr/src/openssl/lib/lib*.so* {{ supla_path  }}/lib/
+rm -rf /usr/src/openssl

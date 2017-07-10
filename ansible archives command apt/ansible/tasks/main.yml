@@ -1,0 +1,315 @@
+---
+- name: create group supla
+  group:
+    name=supla
+    state=present 
+  tags: common
+
+- name: create user supla 
+  user: 
+    name=supla
+    group=supla
+    groups=sudo,www-data
+    state=present
+    shell=/bin/bash
+  tags: common
+
+- name: Set MySQL root password before installing
+  debconf: name='mysql-server' question='mysql-server/root_password' value='{{mysql_root_pass | quote}}' vtype='password'
+  tags: common
+
+- name: Confirm MySQL root password before installing
+  debconf: name='mysql-server' question='mysql-server/root_password_again' value='{{mysql_root_pass | quote}}' vtype='password'
+  tags: common
+
+- name: Create the directories for supla
+  file: path={{ item }} state=directory owner=supla group=supla mode=0755
+  with_items:
+    - '{{ supla_path }}/www'
+    - '{{ supla_path }}/src'
+    - '{{ supla_path }}/src/supla-core'
+    - '{{ supla_path }}/bin'
+    - '{{ supla_path }}/lib'
+    - '/etc/supla-server/'
+    - '/etc/supla-dev/'
+  tags: common
+
+- name: Install packages (Debian)
+  apt: name={{ item }} state=present update_cache=yes cache_valid_time=36000
+  with_items: 
+    - build-essential
+    - apache2
+    - libapache2-mod-php5
+    - php5-mysql
+    - php5-curl
+    - php5-json
+    - php5-xmlrpc
+    - curl
+    - git
+    - mysql-server
+    - libmysqlclient-dev
+    - python-mysqldb 
+    - libssl-dev 
+    - zlib1g
+  when: ansible_distribution == 'Debian'
+  tags: common
+
+- name: Install packages (Ubuntu)
+  apt: name={{ item }} state=present update_cache=yes cache_valid_time=36000
+  with_items: 
+    - build-essential
+    - apache2
+    - libapache2-mod-php7.0
+    - php7.0-mysql
+    - php7.0-curl
+    - php7.0-json
+    - php7.0-xml
+    - php7.0-intl
+    - php7.0-mbstring
+    - php7.0-zip
+    - php-mbstring
+    - php-gettext
+    - php-xml
+    - php-pear 
+    - curl
+    - git
+    - mysql-server
+    - mysql-client
+    - libmysqlclient-dev
+    - python-mysqldb 
+    - libssl-dev
+    - zlib1g
+    - libmysql++-dev
+    - mysql-workbench
+    - python-software-properties
+    - net-tools
+    - nmap
+    - ntp
+    
+  when: ansible_distribution == 'Ubuntu' 
+  tags: common
+
+- name: Check if libssl is already compiled and installed
+  stat: path={{ supla_path}}/lib/libssl.so
+  register: compiled_openssl
+  tags: supla-server
+
+- name: Copy openssl_compile.sh 
+  template: src=openssl_compile.sh.j2 dest={{ supla_path  }}/src/openssl_compile.sh mode=655  
+  tags: supla-server
+  when: compiled_openssl.stat.exists == False 
+
+- name: Make specific ssl lib for this os
+  command: /home/supla/src/openssl_compile.sh
+  when: compiled_openssl.stat.exists == False
+  notify: restart supla-server 
+  tags: supla-server
+
+- name: Git clone supla-server
+  git: repo=https://github.com/SUPLA/supla-core.git dest={{ supla_path }}/src/supla-core accept_hostkey=yes force=yes
+  when: install_supla_server
+  tags: supla-server
+  
+- name: Make clean for supla-server
+  make: chdir={{ supla_path }}/src/supla-core/supla-server/Release target=clean
+  when: install_supla_server    
+  tags: supla-server
+
+- name: Make for supla-server
+  make: chdir={{ supla_path }}/src/supla-core/supla-server/Release
+  when: install_supla_server
+  tags: supla-server
+
+- name: Move supla-server bin
+  command: mv {{ supla_path }}/src/supla-core/supla-server/Release/supla-server {{ supla_path }}/bin
+  when: install_supla_server
+  notify: restart supla-server 
+  tags: supla-server
+  
+- name: create self-signed SSL cert
+  command: openssl req -new -nodes -x509 -subj "/C=IN/ST=Delhi/L=Warsaw/O=SUPLA/CN={{supla_server}}" -days 365 -keyout /etc/supla-server/private.key -out /etc/supla-server/cert.crt
+  when: supla_generate_cert
+  tags: supla-server
+  
+- name: Copy the root credentials
+  template: src=my.cnf.j2 dest=~/.my.cnf mode=0644
+  tags: mysql
+
+- name: Update MySQL root password for all root accounts
+  mysql_user: login_user=root login_password={{ mysql_root_pass }} name=root host={{ item }} password={{ mysql_root_pass }} state=present
+  with_items:
+    - 127.0.0.1
+    - ::1
+    - localhost
+  tags: mysql
+
+  name: Require database
+  mysql_db: name=mydb
+  
+- name: Create a new database supla
+    mysql_db:
+    name: supla
+    state: present
+  register: database_created
+  tags: mysql
+
+- name: Copy database supla dump 
+  copy:
+    src: supla_database.sql
+    dest: /tmp
+  when: database_created.changed
+  tags: mysql
+  
+- name: Import supla database
+  mysql_db:
+    state: import
+    name: supla
+    target: /tmp/supla_database.sql
+  when: database_created.changed
+  tags: mysql
+
+- name: Create user supla for mysql database
+  mysql_user:
+    name: supla
+    password: '{{ supla_database_password }}'
+    priv: 'supla.*:ALL'
+    state: present
+  when: database_created.changed
+  tags: mysql
+  
+- name: Copy supla-server cfg
+  template: src=supla-server.cfg.j2 dest=/etc/supla-server/supla.cfg owner=supla group=supla mode=0750
+  when: install_supla_server
+  tags: supla-server
+
+- name: Copy supla-server service script
+  template: src=supla-server.sh.j2 dest=/etc/init.d/supla-server mode=755
+  when: install_supla_server 
+  tags: supla-server
+
+- name: Start the supla-server service systemd
+  systemd: state=started name=supla-server daemon_reload=yes enabled=yes
+  when: install_supla_server 
+  tags: supla-server
+
+- name: Enable apache modules 
+  apache2_module: state=present name={{ item }}
+  with_items:
+    - ssl
+    - rewrite
+  notify: restart apache2
+  tags: www
+
+- name: Copy supla apache vhost
+  template: src=vhosts.conf.j2 dest=/etc/apache2/sites-available/001-supla.conf mode=755 
+  notify: restart apache2
+  tags: www 
+
+- name: Remove default vhost 
+  file: path=/etc/apache2/sites-enabled/000-default.conf state=absent
+  notify: restart apache2
+  tags: www
+
+- name: Enable apache2 vhost 
+  file: src=/etc/apache2/sites-available/001-supla.conf dest=/etc/apache2/sites-enabled/001-supla.conf owner=root group=root state=link
+  notify: restart apache2
+  tags: www
+
+- name: Check if composer is installed
+  stat: path={{ supla_composer_path }}
+  register: composer_bin
+  tags: www
+
+- name: Get composer
+  shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+  when: composer_bin.stat.exists == False
+  tags: www
+
+- name: Git clone supla-cloud
+  git: repo=https://github.com/SUPLA/supla-cloud.git dest={{ supla_path }}/www accept_hostkey=yes force=yes
+  when: install_supla_cloud
+  tags: www
+  
+- name: Make app directory tree readable for www-data
+  file: path={{ supla_path }}/www
+        mode=0755
+        owner=supla
+        group=www-data
+        recurse=yes
+  when: install_supla_cloud
+  tags: www
+
+- name: Install app by composer 
+  command: composer install chdir={{ supla_path }}/www
+#  composer: command=install working_dir={{supla_path}}/www
+  when: install_supla_cloud
+  become_user: supla
+  tags: www
+
+- name: Copy parameters for symfony 
+  template: src=parameters.j2 dest={{ supla_path }}/www/app/config/parameters.yml mode=755 owner=supla group=www-data 
+  when: install_supla_cloud
+  notify: supla-cloud cache reload
+  tags: www
+
+- name: Check for recaptcha
+  command: grep -F "@Recaptcha\IsTrue" {{ supla_path }}/www/src/SuplaBundle/Form/Model/Registration.php
+  ignore_errors: yes
+  register: recaptcha_test
+  when: install_supla_cloud
+  tags: recaptcha
+
+- name: Disable recaptcha
+  replace:
+    dest={{ supla_path }}/www/src/SuplaBundle/Form/Model/Registration.php
+    regexp='@Recaptcha'
+    replace='DeletedVarRecaptcha'
+  when: install_supla_cloud and not (supla_ewz_recaptcha_public_key or supla_ewz_recaptcha_private_key) and (recaptcha_test.changed)    
+  notify: supla-cloud cache reload
+  tags: recaptcha
+
+- name: Enable recaptcha
+  lineinfile:
+    dest={{ supla_path }}/www/src/SuplaBundle/Form/Model/Registration.php
+    regexp='(\s)+protected \$recaptcha;'
+    insertbefore='protected \$recaptcha;'
+    line='    /** \n    * @Recaptcha\IsTrue\n    */\n    protected $recaptcha;'
+  when: install_supla_cloud and (supla_ewz_recaptcha_public_key and supla_ewz_recaptcha_private_key) and (recaptcha_test.failed)    
+  notify: supla-cloud cache reload
+  tags: recaptcha
+
+- name: Make clean for supla-dev
+  make: chdir={{ supla_path }}/src/supla-core/supla-dev/Release target=clean
+  when: install_supla_dev
+  tags: supla-dev
+
+- name: Make for supla-dev
+  make: chdir={{ supla_path }}/src/supla-core/supla-dev/Release
+  when: install_supla_dev
+  tags: supla-dev
+
+- name: Move supla-dev bin
+  command: mv {{ supla_path }}/src/supla-core/supla-dev/Release/supla-dev {{ supla_path }}/bin
+  when: install_supla_dev
+  notify: restart supla-dev
+  tags: supla-dev
+
+- name: Check if supla.cfg for supla-dev exist
+  stat: path=/etc/supla-dev/supla.cfg
+  register: supla_dev_cfg
+  tags: supla-dev
+
+- name: Copy supla-dev cfg
+  template: src=supla-dev.cfg.j2 dest=/etc/supla-dev/supla.cfg owner=supla group=supla mode=0750
+  when: (install_supla_dev) and (not supla_dev_cfg.stat.exists)
+  tags: supla-dev
+
+- name: Copy supla-dev service script
+  template: src=supla-dev.sh.j2 dest=/etc/init.d/supla-dev mode=755 
+  when: install_supla_dev
+  tags: supla-dev
+
+- name: Start the supla-dev service
+  systemd: state=started name=supla-dev daemon_reload=yes enabled=yes
+  when: install_supla_dev
+  tags: supla-dev

@@ -1,0 +1,16 @@
+- hosts: all
+
+  become: true
+
+  vars:
+
+   mysql_root_pass: secretpassword
+   supla_database_password: secretpassword
+   install_supla_server: True
+   install_supla_cloud: True
+   install_supla_dev: True
+   supla_generate_cert: True
+   supla_server: supla
+
+  roles:
+    - role: supla
